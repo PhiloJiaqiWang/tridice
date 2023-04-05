@@ -50,7 +50,7 @@ class DiceFaces {
     return "down";
   }
 
-  get toString() {
+  toString() {
     return this.faces.toString();
   }
 
@@ -275,7 +275,10 @@ export class Dice {
 
   /**
    * Removes itself from previous cell, sets its `currentCell` to the new cell.
-   * Doesn't change faces
+   *
+   * Doesn't change faces.
+   *
+   * Ignores whether cell is occupied or not
    * @date 4/5/2023 - 11:37:02 AM
    *
    * @param {Cell} cell
@@ -291,6 +294,10 @@ export class Dice {
     this.movementTracking = [];
     this.moveCount = this.faces.top;
     this.temporaryFaces = this.faces.copy();
+  }
+
+  removeFromCell() {
+    this.currentCell = null;
   }
 
   /**
@@ -321,6 +328,7 @@ export class Dice {
   /**
    * Attempts to move to given direction.
    *
+   * Ignores whether cell it is trying to move to is empty.
    *
    * @date 4/5/2023 - 11:41:16 AM
    *
@@ -342,7 +350,7 @@ export class Dice {
       throw error;
     }
     if (typeof nextNeighbor === "number") {
-      const error = Dice.ERROR.CellNotSet;
+      const error = Dice.ERROR.InvalidDirection;
       error.message = `Dice [${this.id}] cannot move [${direction}] because ${nextNeighbor} is still a number.`;
       throw error;
     }
@@ -366,6 +374,7 @@ export class Dice {
     }
     this.temporaryFaces.move(lastMove[1]);
     this.moveCount++;
+    return lastMove[0];
   }
 
   get cell() {
@@ -382,6 +391,10 @@ export class Dice {
     this.faces.simulatedRoll(count);
     this.moveCount = this.faces.top;
     this.temporaryFaces = this.faces.copy();
+  }
+
+  toString() {
+    return this.faces.toString();
   }
 }
 
@@ -445,6 +458,7 @@ export class Cell {
       throw error;
     }
     this.content = null;
+    dice.removeFromCell();
     return dice;
   }
 
@@ -502,15 +516,15 @@ export class Board {
   private cellMap: Map<CellID, Cell>;
   private players!: [Player, Player];
   private currentPlayerIndex: number;
+  private currentDice!: Dice | null;
 
   readonly upFacingCells: Map<CellID, Cell>;
   readonly downFacingCells: Map<CellID, Cell>;
 
-  currentDice!: Dice | null;
-
   static ERROR = {
     UndefinedCell: new Error("Undefined cell."),
     WrongTurnMove: new Error("Player making move not on their turn."),
+    NoCurrentDice: new Error("No current dice set."),
   };
 
   constructor() {
@@ -570,12 +584,17 @@ export class Board {
     return this.cellMap;
   }
 
+  setCurrentDice(dice: Dice) {
+    this.currentDice?.resetTemporaryMoves();
+    this.currentDice = dice;
+  }
+
   nextTurn() {
     this.currentPlayerIndex++;
     this.currentPlayerIndex %= 2;
   }
 
-  placeDiceAt(dice: Dice, cellID: CellID) {
+  placeCurrentDiceAt(cellID: CellID) {
     const cell = this.cells.get(cellID);
 
     if (cell === undefined) {
@@ -584,32 +603,57 @@ export class Board {
       throw error;
     }
 
-    dice.moveTo(cell);
+    this.currentDice?.moveTo(cell);
   }
 
-  moveDice(dice: Dice, direction: NeighborType) {
-    if (this.currentDice !== null) {
-      this.currentDice.resetTemporaryMoves();
-    }
+  removeDiceFrom(cellID: CellID) {
+    const cell = this.cells.get(cellID);
 
-    this.currentDice = dice;
+    return cell?.removeDice();
+  }
 
-    if (dice.owner !== this.currentPlayer) {
-      const error = Board.ERROR.WrongTurnMove;
-      error.message = `Dice being moved ([${dice.id}]) doesn't belong to current player ([${this.currentPlayer.id}]).`;
+  undoMove() {
+    this.currentDice?.undoMove();
+  }
+
+  moveHistory() {
+    return this.currentDice?.movementTracking.map(([cell, _]) => cell.id);
+  }
+
+  lastMoveMade() {
+    return this.currentDice?.movementTracking[
+      this.currentDice?.movementTracking.length - 1
+    ][0].id;
+  }
+
+  moveDice(direction: NeighborType) {
+    if (this.currentDice === null) {
+      const error = Board.ERROR.NoCurrentDice;
+      error.message = "Can't move dice because board has no `currentDice` set.";
       throw error;
     }
-    dice.tryMoveTo(direction);
+
+    if (this.currentDice.owner !== this.currentPlayer) {
+      const error = Board.ERROR.WrongTurnMove;
+      error.message = `Dice being moved ([${this.currentDice.id}]) doesn't belong to current player ([${this.currentPlayer.id}]).`;
+      throw error;
+    }
+
+    this.currentDice.tryMoveTo(direction);
   }
 
-  finishMove() {
+  endTurn() {
     this.currentDice?.fixTemporaryFaces();
     this.currentDice = null;
     this.nextTurn();
   }
 
-  canFinishMove() {
+  canEndTurn() {
     return this.currentDice?.canFinishMoving;
+  }
+
+  rollCurrentDice() {
+    this.currentDice?.roll();
   }
 
   rollDice(dice: Dice) {
@@ -624,28 +668,39 @@ export class Board {
     if (dice.currentPointingDirection === "down") return this.downFacingCells;
     return this.upFacingCells;
   }
+
+  getCellsFittingForCurrentDice() {
+    if (this.currentDice?.currentPointingDirection === "down")
+      return this.downFacingCells;
+    return this.upFacingCells;
+  }
 }
 
 function demo() {
   const b = new Board();
-  const player1 = b.p1;
-  const dice0 = player1.dice[0];
+  const p1 = b.p1;
+  const p2 = b.p2;
   const cell11 = b.cells.get(11)!;
 
-  console.log(dice0.currentPointingDirection);
-  console.log(dice0.temporaryFaces);
-  dice0.rotate("right");
-  console.log(dice0.temporaryFaces);
-  dice0.rotate("right");
-  console.log(dice0.temporaryFaces);
+  // Player 1 selects dice
+  b.setCurrentDice(p1.dice[0]);
+  // Rolls current dice
+  b.rollCurrentDice();
+  // Cells where rolled dice could fit
+  let fittingCells = b.getCellsFittingForCurrentDice();
+  // Player 1 places dice in cell
+  b.placeCurrentDiceAt(11);
+  // Player 1 finishes turn
+  b.endTurn();
 
-  const counter = [0, 0];
-  for (let _ = 0; _ < 100; _++) {
-    b.simulateDiceRoll(dice0);
-    // console.log(dice0.temporaryFaces);
-    counter[dice0.temporaryFaces.nullIndex - 3]++;
-  }
-  console.log(counter[0] / counter[1]);
+  // Player 2 selects dice
+  b.setCurrentDice(p1.dice[0]);
+  // Rolls current dice
+  b.rollCurrentDice();
+  // Player 2 places dice in cell 11
+  b.placeCurrentDiceAt(11);
+  // Player 2 finishes turn
+  b.endTurn();
 }
 
 demo();
