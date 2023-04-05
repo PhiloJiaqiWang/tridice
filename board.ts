@@ -686,15 +686,14 @@ function demo() {
   b.setCurrentDice(p1.dice[0]);
   // Rolls current dice
   b.rollCurrentDice();
-  // Cells where rolled dice could fit
-  let fittingCells = b.getCellsFittingForCurrentDice();
   // Player 1 places dice in cell
   b.placeCurrentDiceAt(11);
   // Player 1 finishes turn
   b.endTurn();
 
+  let p = b.currentPlayer;
   // Player 2 selects dice
-  b.setCurrentDice(p1.dice[0]);
+  b.setCurrentDice(p.dice[0]);
   // Rolls current dice
   b.rollCurrentDice();
   // Player 2 places dice in cell 11
