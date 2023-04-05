@@ -5,15 +5,15 @@ function* cellIDIterator() {
     for (let b = 1; b <= a + 2; b++) yield a * 10 + b;
 }
 
-console.log(Array.from(cellIDIterator()));
+const CELL_IDS = Array.from(cellIDIterator());
 
 type NeighborType = "up" | "down" | "left" | "right";
 type CellID = number;
 interface Neighborhood {
-  up: Cell | number | null;
-  down: Cell | number | null;
-  left: Cell | number | null;
-  right: Cell | number | null;
+  up: Cell | number;
+  down: Cell | number;
+  left: Cell | number;
+  right: Cell | number;
 }
 
 class DiceFaces {
@@ -240,6 +240,10 @@ export class Cell {
     this.content = null;
   }
 
+  get neighborhood() {
+    return this.neighbors;
+  }
+
   set dice(dice: Dice | null) {
     if (this.content === null) throw new Error("Cell already filled.");
     this.content = dice;
@@ -261,17 +265,56 @@ export class Cell {
     return this.neighbors[neighbor];
   }
 
-  setNeighbor(neighborID: NeighborType, neighborCell: Cell) {
-    const neighbor = this.neighbors[neighborID];
+  setNeighbor(neighborDirection: NeighborType, neighborCell: Cell) {
+    const neighbor = this.neighbors[neighborDirection];
 
     if (typeof neighbor !== "number") throw new Error("Neighbor already set.");
     if (neighbor !== neighborCell.id)
       throw new Error("Invalid neighbor setting.");
 
-    this.neighbors[neighborID] = neighborCell;
+    this.neighbors[neighborDirection] = neighborCell;
+  }
+}
+
+export class Player {
+  private dice: Dice[];
+
+  constructor(numberOfDice = 4) {
+    this.dice = [];
+    for (let diceID = 0; diceID < numberOfDice; diceID++)
+      this.dice.push(new Dice(diceID));
   }
 }
 
 export class Board {
-  constructor() {}
+  private cells: Map<CellID, Cell>;
+  players!: [Player, Player];
+
+  constructor() {
+    this.cells = new Map();
+    for (const id of cellIDIterator()) {
+      const neighbors = {
+        up: id - 11,
+        down: id + 11,
+        left: id - 1,
+        right: id + 1,
+      } as Neighborhood;
+      this.cells.set(id, new Cell(id, neighbors));
+
+      this.players = [new Player(), new Player()];
+    }
+
+    const neighborhoodKeys = ["up", "down", "left", "right"] as NeighborType[];
+    for (const cell of this.cells.values()) {
+      for (const neighborDirection of neighborhoodKeys) {
+        const neighborID = cell.getNeighbor(neighborDirection);
+        if (neighborID instanceof Cell) continue;
+
+        const neighborCell = this.cells.get(neighborID);
+        if (neighborCell === undefined) continue;
+
+        cell.setNeighbor(neighborDirection, neighborCell);
+      }
+    }
+  }
 }
