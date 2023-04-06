@@ -1,6 +1,6 @@
 export const ROLL_COUNT = 4;
 
-function* cellIDIterator() {
+export function* cellIDIterator() {
   for (let a = 1; a <= ROLL_COUNT; a++)
     for (let b = 1; b <= a + 2; b++) {
       if (a === 1 && b > 1) continue;
@@ -8,18 +8,33 @@ function* cellIDIterator() {
     }
 }
 
+export function throwCustomError(error: Error, message: string): never {
+  error.message = message;
+  throw error;
+}
+
+type FaceNumber = 0 | 1 | 2 | 3 | 4;
+
+export interface SimplifiedDice {
+  up: FaceNumber;
+  top: FaceNumber;
+  down: FaceNumber;
+  left: FaceNumber;
+  right: FaceNumber;
+}
+
 // const CELL_IDS = Array.from(cellIDIterator());
 
-type NeighborType = "up" | "down" | "left" | "right";
-type CellID = number;
-interface Neighborhood {
+export type NeighborType = "up" | "down" | "left" | "right";
+export type CellID = number;
+export interface Neighborhood {
   up: Cell | number;
   down: Cell | number;
   left: Cell | number;
   right: Cell | number;
 }
 
-class DiceFaces {
+export class DiceFaces {
   static faceNameToIndex = {
     left: 0,
     top: 1,
@@ -36,8 +51,8 @@ class DiceFaces {
     down: "up",
   };
 
-  private faces: number[];
-  constructor(faces = [1, 2, 3, 4, 0]) {
+  private faces: FaceNumber[];
+  constructor(faces: FaceNumber[] = [1, 2, 3, 4, 0]) {
     this.faces = faces;
   }
 
@@ -82,7 +97,7 @@ class DiceFaces {
     return this.faces[0];
   }
 
-  set realFaces(newRealFaces: number[]) {
+  set realFaces(newRealFaces: FaceNumber[]) {
     this.faces = [...newRealFaces, this.faces[3], this.faces[4]];
   }
 
@@ -135,7 +150,7 @@ class DiceFaces {
     }
   }
 
-  moveNumberToNullZone(newNullZoneNumber: number) {
+  moveNumberToNullZone(newNullZoneNumber: FaceNumber) {
     const oldNullZoneNumber = this.nullZoneNumber;
     const oldNullIndex = this.nullIndex;
 
@@ -206,7 +221,7 @@ class DiceFaces {
   }
 
   roll() {
-    const newFaces = [-1, -1, -1, -1, -1];
+    const newFaces: FaceNumber[] = [0, 0, 0, 0, 0];
     const availablePositions = new Set([0, 1, 2, 3, 4]);
     const newNullPosition = DiceFaces.randint(
       this.faces.length - 2,
@@ -214,10 +229,11 @@ class DiceFaces {
     );
     newFaces[newNullPosition] = 0;
     availablePositions.delete(newNullPosition);
-    for (const number of [1, 2, 3, 4]) {
+    const leftoverFaceNumbers: FaceNumber[] = [1, 2, 3, 4];
+    for (const num of leftoverFaceNumbers) {
       const randIndex = DiceFaces.randint(0, availablePositions.size);
       const newFacePosition = [...availablePositions][randIndex];
-      newFaces[newFacePosition] = number;
+      newFaces[newFacePosition] = num;
       availablePositions.delete(newFacePosition);
     }
 
@@ -226,10 +242,12 @@ class DiceFaces {
 }
 
 export class Dice {
-  readonly id: number | string;
+  readonly id: string;
   private currentCell: Cell | null;
   private faces: DiceFaces;
   readonly owner: Player;
+
+  static Directions: NeighborType[] = ["up", "down", "left", "right"];
 
   static ERROR = {
     InvalidDirection: new Error("Invalid direction for dice movement."),
@@ -245,7 +263,7 @@ export class Dice {
 
   state: string;
 
-  constructor(id: number | string, owner: Player) {
+  constructor(id: string, owner: Player) {
     this.id = id;
     this.owner = owner;
     this.currentCell = null;
@@ -309,11 +327,12 @@ export class Dice {
    * @date 4/5/2023 - 11:38:19 AM
    */
   fixTemporaryFaces() {
-    if (!this.canFinishMoving) {
-      const error = Dice.ERROR.HasMovesLeft;
-      error.message = `Dice [${this.id}] cannot finish moving because it still has ${this.moveCount} moves left.`;
-      throw error;
-    }
+    if (!this.canFinishMoving)
+      throwCustomError(
+        Dice.ERROR.HasMovesLeft,
+        `Dice [${this.id}] cannot finish moving because it still has ${this.moveCount} moves left.`
+      );
+
     this.faces = this.temporaryFaces.copy();
     const lastMove = this.movementTracking[this.movementTracking.length - 1];
     this.moveTo(lastMove[0]);
@@ -336,24 +355,25 @@ export class Dice {
    * @param {NeighborType} direction
    */
   tryMoveTo(direction: NeighborType) {
-    if (this.canFinishMoving) {
-      const error = Dice.ERROR.NoMovesLeft;
-      error.message = `Dice [${this.id}] cannot move because it's move count has reached 0.`;
-      throw error;
-    }
+    if (this.canFinishMoving)
+      throwCustomError(
+        Dice.ERROR.NoMovesLeft,
+        `Dice [${this.id}] cannot move because it's move count has reached 0.`
+      );
 
     const nextNeighbor = this.cell?.getNeighbor(direction);
 
-    if (nextNeighbor === undefined) {
-      const error = Dice.ERROR.InvalidDirection;
-      error.message = `Dice [${this.id}] cannot move [${direction}] from [${this.cell}] because there is no cell there.`;
-      throw error;
-    }
-    if (typeof nextNeighbor === "number") {
-      const error = Dice.ERROR.InvalidDirection;
-      error.message = `Dice [${this.id}] cannot move [${direction}] because ${nextNeighbor} is still a number.`;
-      throw error;
-    }
+    if (nextNeighbor === undefined)
+      throwCustomError(
+        Dice.ERROR.InvalidDirection,
+        `Dice [${this.id}] cannot move [${direction}] from [${this.cell}] because there is no cell there.`
+      );
+
+    if (typeof nextNeighbor === "number")
+      throwCustomError(
+        Dice.ERROR.InvalidDirection,
+        `Dice [${this.id}] cannot move [${direction}] because ${nextNeighbor} is still a number.`
+      );
 
     this.temporaryFaces.move(direction);
 
@@ -367,11 +387,12 @@ export class Dice {
 
   undoMove() {
     const lastMove = this.movementTracking.pop();
-    if (lastMove === undefined) {
-      const error = Dice.ERROR.NoMoves;
-      error.message = `Dice [${this.id}] cannot undo moves because it has made none.`;
-      throw error;
-    }
+    if (lastMove === undefined)
+      throwCustomError(
+        Dice.ERROR.NoMoves,
+        `Dice [${this.id}] cannot undo moves because it has made none.`
+      );
+
     this.temporaryFaces.move(lastMove[1]);
     this.moveCount++;
     return lastMove[0];
@@ -395,6 +416,16 @@ export class Dice {
 
   toString() {
     return this.faces.toString();
+  }
+
+  simplified(): SimplifiedDice {
+    return {
+      top: this.faces.top,
+      up: this.faces.up,
+      down: this.faces.down,
+      left: this.faces.left,
+      right: this.faces.right,
+    };
   }
 }
 
@@ -427,17 +458,28 @@ export class Cell {
     return this.neighbors;
   }
 
+  get neighborsIDs() {
+    return {
+      up: this.neighbors.up instanceof Cell ? this.neighbors.up.id : null,
+      down: this.neighbors.down instanceof Cell ? this.neighbors.down.id : null,
+      left: this.neighbors.left instanceof Cell ? this.neighbors.left.id : null,
+      right:
+        this.neighbors.right instanceof Cell ? this.neighbors.right.id : null,
+    };
+  }
+
   set dice(dice: Dice | null) {
-    if (this.content !== null) {
-      const error = Cell.ERROR.AlreadyFull;
-      error.message = `Cell [${this.id}] already contains the dice [${this.dice}].`;
-      throw error;
-    }
-    if (dice !== null && !this.diceFits(dice)) {
-      const error = Cell.ERROR.DiceDoesntFit;
-      error.message = `Dice [${this.dice}] doesn't fit in cell [${this.id}].`;
-      throw error;
-    }
+    if (this.content !== null)
+      throwCustomError(
+        Cell.ERROR.AlreadyFull,
+        `Cell [${this.id}] already contains the dice [${this.dice}].`
+      );
+    if (dice !== null && !this.diceFits(dice))
+      throwCustomError(
+        Cell.ERROR.DiceDoesntFit,
+        `Dice [${this.dice}] doesn't fit in cell [${this.id}].`
+      );
+
     this.content = dice;
   }
 
@@ -452,11 +494,9 @@ export class Cell {
 
   removeDice(): Dice {
     const dice = this.content;
-    if (dice === null) {
-      const error = Cell.ERROR.EmptyCell;
-      error.message = `Cell [${this.id}] is empty.`;
-      throw error;
-    }
+    if (dice === null)
+      throwCustomError(Cell.ERROR.EmptyCell, `Cell [${this.id}] is empty.`);
+
     this.content = null;
     dice.removeFromCell();
     return dice;
@@ -473,16 +513,17 @@ export class Cell {
   ) {
     const neighbor = this.neighbors[neighborDirection];
 
-    if (typeof neighbor !== "number") {
-      const error = Cell.ERROR.NeighborAlreadySet;
-      error.message = `Cell [${this.id}] already has a(n) [${neighborDirection}] neighbor: [${neighbor.id}].`;
-      throw error;
-    }
-    if (neighbor !== neighborCell.id) {
-      const error = Cell.ERROR.InvalidNeighbor;
-      error.message = `Cell [${this.id}] was expecting a neighbor with id [${neighbor}], instead got a neighbor with id [${neighborCell.id}].`;
-      throw error;
-    }
+    if (typeof neighbor !== "number")
+      throwCustomError(
+        Cell.ERROR.NeighborAlreadySet,
+        `Cell [${this.id}] already has a(n) [${neighborDirection}] neighbor: [${neighbor.id}].`
+      );
+
+    if (neighbor !== neighborCell.id)
+      throwCustomError(
+        Cell.ERROR.InvalidNeighbor,
+        `Cell [${this.id}] was expecting a neighbor with id [${neighbor}], instead got a neighbor with id [${neighborCell.id}].`
+      );
 
     this.neighbors[neighborDirection] = neighborCell;
     if (
@@ -499,207 +540,34 @@ export class Cell {
 }
 
 export class Player {
-  readonly dice: Dice[];
+  readonly dice: Map<string, Dice>;
   readonly id: number;
+  readonly lostDice: Map<string, Dice>;
+  readonly diceOnBoard: Map<string, Dice>;
 
   constructor(playerNumber: number, numberOfDice = 4) {
     this.id = playerNumber;
-    this.dice = [];
+    this.dice = new Map();
     for (let diceID = 0; diceID < numberOfDice; diceID++) {
       const diceStringID = (this.id * 10 + diceID).toString();
-      this.dice.push(new Dice(diceStringID, this));
+      this.dice.set(diceStringID, new Dice(diceStringID, this));
     }
+
+    this.lostDice = new Map();
+    this.diceOnBoard = new Map();
+  }
+
+  loseDice(dice: Dice) {
+    this.diceOnBoard.set(dice.id, dice);
+    this.diceOnBoard.delete(dice.id);
+  }
+
+  placeDice(dice: Dice) {
+    this.diceOnBoard.set(dice.id, dice);
+  }
+
+  getDice(num: number) {
+    const diceID = (this.id * 10 + num).toString();
+    return this.dice.get(diceID);
   }
 }
-
-export class Board {
-  private cellMap: Map<CellID, Cell>;
-  private players!: [Player, Player];
-  private currentPlayerIndex: number;
-  private currentDice!: Dice | null;
-
-  readonly upFacingCells: Map<CellID, Cell>;
-  readonly downFacingCells: Map<CellID, Cell>;
-
-  static ERROR = {
-    UndefinedCell: new Error("Undefined cell."),
-    WrongTurnMove: new Error("Player making move not on their turn."),
-    NoCurrentDice: new Error("No current dice set."),
-  };
-
-  constructor() {
-    this.cellMap = new Map();
-    this.players = [new Player(1), new Player(2)];
-    this.currentPlayerIndex = 0;
-    this.upFacingCells = new Map();
-    this.downFacingCells = new Map();
-
-    for (const id of cellIDIterator()) {
-      const neighbors = {
-        up: id - 11,
-        down: id + 11,
-        left: id - 1,
-        right: id + 1,
-      } as Neighborhood;
-      const unitNumber = +id.toString()[1];
-      const pointingDirection = unitNumber % 2 ? "up" : "down";
-      const newCell = new Cell(id, neighbors, pointingDirection);
-      this.cellMap.set(id, newCell);
-
-      if (newCell.pointingDirection === "down")
-        this.downFacingCells.set(id, newCell);
-      else this.upFacingCells.set(id, newCell);
-
-      this.currentDice = null;
-    }
-
-    const neighborhoodKeys = ["up", "down", "left", "right"] as NeighborType[];
-    for (const cell of this.cellMap.values()) {
-      for (const neighborDirection of neighborhoodKeys) {
-        const neighborID = cell.getNeighbor(neighborDirection);
-
-        if (neighborID instanceof Cell) continue;
-
-        const neighborCell = this.cellMap.get(neighborID);
-        if (neighborCell === undefined) continue;
-
-        cell.setNeighbor(neighborDirection, neighborCell);
-      }
-    }
-  }
-
-  get currentPlayer() {
-    return this.players[this.currentPlayerIndex];
-  }
-
-  get p1() {
-    return this.players[0];
-  }
-
-  get p2() {
-    return this.players[1];
-  }
-
-  get cells() {
-    return this.cellMap;
-  }
-
-  setCurrentDice(dice: Dice) {
-    this.currentDice?.resetTemporaryMoves();
-    this.currentDice = dice;
-  }
-
-  nextTurn() {
-    this.currentPlayerIndex++;
-    this.currentPlayerIndex %= 2;
-  }
-
-  placeCurrentDiceAt(cellID: CellID) {
-    const cell = this.cells.get(cellID);
-
-    if (cell === undefined) {
-      const error = Board.ERROR.UndefinedCell;
-      error.message = `Cell ${cellID} doesn't exist on board.`;
-      throw error;
-    }
-
-    this.currentDice?.moveTo(cell);
-  }
-
-  removeDiceFrom(cellID: CellID) {
-    const cell = this.cells.get(cellID);
-
-    return cell?.removeDice();
-  }
-
-  undoMove() {
-    this.currentDice?.undoMove();
-  }
-
-  moveHistory() {
-    return this.currentDice?.movementTracking.map(([cell, _]) => cell.id);
-  }
-
-  lastMoveMade() {
-    return this.currentDice?.movementTracking[
-      this.currentDice?.movementTracking.length - 1
-    ][0].id;
-  }
-
-  moveDice(direction: NeighborType) {
-    if (this.currentDice === null) {
-      const error = Board.ERROR.NoCurrentDice;
-      error.message = "Can't move dice because board has no `currentDice` set.";
-      throw error;
-    }
-
-    if (this.currentDice.owner !== this.currentPlayer) {
-      const error = Board.ERROR.WrongTurnMove;
-      error.message = `Dice being moved ([${this.currentDice.id}]) doesn't belong to current player ([${this.currentPlayer.id}]).`;
-      throw error;
-    }
-
-    this.currentDice.tryMoveTo(direction);
-  }
-
-  endTurn() {
-    this.currentDice?.fixTemporaryFaces();
-    this.currentDice = null;
-    this.nextTurn();
-  }
-
-  canEndTurn() {
-    return this.currentDice?.canFinishMoving;
-  }
-
-  rollCurrentDice() {
-    this.currentDice?.roll();
-  }
-
-  rollDice(dice: Dice) {
-    dice.roll();
-  }
-
-  simulateDiceRoll(dice: Dice, count = 30) {
-    dice.simulatedRoll(count);
-  }
-
-  getCellsFittingForDice(dice: Dice) {
-    if (dice.currentPointingDirection === "down") return this.downFacingCells;
-    return this.upFacingCells;
-  }
-
-  getCellsFittingForCurrentDice() {
-    if (this.currentDice?.currentPointingDirection === "down")
-      return this.downFacingCells;
-    return this.upFacingCells;
-  }
-}
-
-function demo() {
-  const b = new Board();
-  const p1 = b.p1;
-  const p2 = b.p2;
-  const cell11 = b.cells.get(11)!;
-
-  // Player 1 selects dice
-  b.setCurrentDice(p1.dice[0]);
-  // Rolls current dice
-  b.rollCurrentDice();
-  // Player 1 places dice in cell
-  b.placeCurrentDiceAt(11);
-  // Player 1 finishes turn
-  b.endTurn();
-
-  let p = b.currentPlayer;
-  // Player 2 selects dice
-  b.setCurrentDice(p.dice[0]);
-  // Rolls current dice
-  b.rollCurrentDice();
-  // Player 2 places dice in cell 11
-  b.placeCurrentDiceAt(11);
-  // Player 2 finishes turn
-  b.endTurn();
-}
-
-demo();
