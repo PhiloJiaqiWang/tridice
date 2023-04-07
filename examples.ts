@@ -1,4 +1,4 @@
-import { CellID, Dice } from "./cell.ts";
+import { CellID, Dice, NeighborType } from "./cell.ts";
 import { Tridice } from "./tridice.ts";
 
 /**
@@ -34,16 +34,25 @@ function placeDiceExample(
  * @param {Tridice} game
  * @param {CellID} diceCell
  */
-function moveDiceExample(game: Tridice, diceCell: CellID) {
+function moveDiceExample(
+  game: Tridice,
+  diceCell: CellID,
+  movementOrder: NeighborType[]
+) {
   // Extracting the dice from the cell
   const dice = game.cells.get(diceCell)?.dice!;
 
   // Making it the selected dice
   game.selectDice(dice);
 
+  let moveIdx = 0;
   // The number of moves left in the dice can be retrieved as such
   while (game.canSelectedDiceMove()) {
-    // Getting the possible moves for this dice
-    const neighbors = game.selectedDiceNeighbors();
+    const moveDirection = movementOrder[moveIdx];
+    moveIdx += 1;
+    game.moveDice(moveDirection);
   }
+
+  //Finish moving dice
+  game.endTurn();
 }

@@ -237,8 +237,10 @@ export class Tridice {
   }
 
   board() {
-    const boardRepresentation: Map<CellID, SimplifiedDice | undefined> =
-      new Map();
+    const boardRepresentation: Map<
+      CellID,
+      SimplifiedDice | undefined
+    > = new Map();
     for (const [cellID, cell] of this.cellMap.entries()) {
       boardRepresentation.set(cellID, cell.dice?.simplified());
     }
@@ -257,5 +259,9 @@ export class Tridice {
     if (this.selectedDice?.currentPointingDirection === "down")
       return this.downFacingCells;
     return this.upFacingCells;
+  }
+
+  neighborIDsOfCell(cellID: CellID) {
+    return this.cells.get(cellID)?.neighborsIDs;
   }
 }
