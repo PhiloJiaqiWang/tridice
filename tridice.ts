@@ -244,6 +244,8 @@ export class Tridice {
     for (const [cellID, cell] of this.cellMap.entries()) {
       boardRepresentation.set(cellID, cell.dice?.simplified());
     }
+
+    return boardRepresentation;
   }
 
   simulateDiceRoll(dice: Dice, count = 30) {
