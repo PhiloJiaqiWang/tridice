@@ -108,14 +108,14 @@ class DiceFaces {
             this.realFaces = [
                 this.firstRealFace,
                 this.middleRealFace,
-                oldNullZoneNumber
+                oldNullZoneNumber, 
             ];
         } else {
-            const oldNullZoneNumber = this.moveNumberToNullZone(this.firstRealFace);
+            const oldNullZoneNumber1 = this.moveNumberToNullZone(this.firstRealFace);
             this.realFaces = [
-                oldNullZoneNumber,
+                oldNullZoneNumber1,
                 this.middleRealFace,
-                this.lastRealFace
+                this.lastRealFace, 
             ];
         }
     }
@@ -133,23 +133,23 @@ class DiceFaces {
             this.realFaces = [
                 oldNullZoneNumber,
                 this.firstRealFace,
-                this.middleRealFace
+                this.middleRealFace, 
             ];
         } else if (direction === "left") {
-            const oldNullZoneNumber = this.moveNumberToNullZone(this.firstRealFace);
+            const oldNullZoneNumber1 = this.moveNumberToNullZone(this.firstRealFace);
             this.realFaces = [
                 this.middleRealFace,
                 this.lastRealFace,
-                oldNullZoneNumber
+                oldNullZoneNumber1, 
             ];
         } else if (direction === "down" || direction === "up") {
             if (direction === "down" && !this.canMoveDown) throw new Error("Can't move down");
             if (direction === "up" && !this.canMoveUp) throw new Error("Can't move up");
-            const oldNullZoneNumber = this.moveNumberToNullZone(this.middleRealFace);
+            const oldNullZoneNumber2 = this.moveNumberToNullZone(this.middleRealFace);
             this.realFaces = [
                 this.firstRealFace,
-                oldNullZoneNumber,
-                this.lastRealFace
+                oldNullZoneNumber2,
+                this.lastRealFace, 
             ];
         }
     }
@@ -436,7 +436,7 @@ class Tridice {
         this.cellMap = new Map();
         this.players = [
             new Player(1, Tridice.PLAYER_DICE_COUNT),
-            new Player(2, Tridice.PLAYER_DICE_COUNT)
+            new Player(2, Tridice.PLAYER_DICE_COUNT), 
         ];
         this.currentPlayerIndex = 0;
         this.upFacingCells = new Map();
@@ -570,6 +570,7 @@ class Tridice {
         for (const [cellID, cell] of this.cellMap.entries()){
             boardRepresentation.set(cellID, cell.dice?.simplified());
         }
+        return boardRepresentation;
     }
     simulateDiceRoll(dice, count = 30) {
         dice.simulatedRoll(count);
