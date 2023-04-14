@@ -241,9 +241,9 @@ export class Tridice {
       CellID,
       SimplifiedDice | undefined
     > = new Map();
-    for (const [cellID, cell] of this.cellMap.entries()) {
-      boardRepresentation.set(cellID, cell.dice?.simplified());
-    }
+    for (const [cellID, cell] of this.cellMap.entries())
+      if (cell.dice !== null)
+        boardRepresentation.set(cellID, cell.dice.simplified());
 
     return boardRepresentation;
   }
