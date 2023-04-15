@@ -307,8 +307,8 @@ export class Dice {
    * @param {Cell} cell
    */
   moveTo(cell: Cell) {
-    cell.dice = this;
     this.currentCell?.removeDice();
+    cell.dice = this;
     this.currentCell = cell;
     this.movementTracking = [];
   }
@@ -366,7 +366,13 @@ export class Dice {
         `Dice [${this.id}] cannot move because it's move count has reached 0.`
       );
 
-    const nextNeighbor = this.cell?.getNeighbor(direction);
+    let nextNeighbor = this.cell?.getNeighbor(direction);
+
+    if (this.movementTracking.length > 0)
+      nextNeighbor =
+        this.movementTracking[this.movementTracking.length - 1]![0].getNeighbor(
+          direction
+        );
 
     if (nextNeighbor === undefined)
       throwCustomError(
