@@ -21,6 +21,7 @@ export interface SimplifiedDice {
   down: FaceNumber;
   left: FaceNumber;
   right: FaceNumber;
+  owner: Player;
 }
 
 // const CELL_IDS = Array.from(cellIDIterator());
@@ -420,11 +421,12 @@ export class Dice {
 
   simplified(): SimplifiedDice {
     return {
+      left: this.faces.left,
       top: this.faces.top,
+      right: this.faces.right,
       up: this.faces.up,
       down: this.faces.down,
-      left: this.faces.left,
-      right: this.faces.right,
+      owner: this.owner,
     };
   }
 }
