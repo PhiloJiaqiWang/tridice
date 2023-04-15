@@ -108,14 +108,14 @@ class DiceFaces {
             this.realFaces = [
                 this.firstRealFace,
                 this.middleRealFace,
-                oldNullZoneNumber, 
+                oldNullZoneNumber
             ];
         } else {
-            const oldNullZoneNumber1 = this.moveNumberToNullZone(this.firstRealFace);
+            const oldNullZoneNumber = this.moveNumberToNullZone(this.firstRealFace);
             this.realFaces = [
-                oldNullZoneNumber1,
+                oldNullZoneNumber,
                 this.middleRealFace,
-                this.lastRealFace, 
+                this.lastRealFace
             ];
         }
     }
@@ -133,23 +133,23 @@ class DiceFaces {
             this.realFaces = [
                 oldNullZoneNumber,
                 this.firstRealFace,
-                this.middleRealFace, 
+                this.middleRealFace
             ];
         } else if (direction === "left") {
-            const oldNullZoneNumber1 = this.moveNumberToNullZone(this.firstRealFace);
+            const oldNullZoneNumber = this.moveNumberToNullZone(this.firstRealFace);
             this.realFaces = [
                 this.middleRealFace,
                 this.lastRealFace,
-                oldNullZoneNumber1, 
+                oldNullZoneNumber
             ];
         } else if (direction === "down" || direction === "up") {
             if (direction === "down" && !this.canMoveDown) throw new Error("Can't move down");
             if (direction === "up" && !this.canMoveUp) throw new Error("Can't move up");
-            const oldNullZoneNumber2 = this.moveNumberToNullZone(this.middleRealFace);
+            const oldNullZoneNumber = this.moveNumberToNullZone(this.middleRealFace);
             this.realFaces = [
                 this.firstRealFace,
-                oldNullZoneNumber2,
-                this.lastRealFace, 
+                oldNullZoneNumber,
+                this.lastRealFace
             ];
         }
     }
@@ -246,6 +246,9 @@ class Dice {
         this.moveCount = this.faces.top;
         this.state = "";
     }
+    get topFace() {
+        return this.faces.top;
+    }
     get facesString() {
         return this.faces.toString;
     }
@@ -260,8 +263,8 @@ class Dice {
         this.temporaryFaces = this.faces.copy();
     }
     moveTo(cell) {
-        cell.dice = this;
         this.currentCell?.removeDice();
+        cell.dice = this;
         this.currentCell = cell;
         this.movementTracking = [];
     }
@@ -286,7 +289,8 @@ class Dice {
     }
     tryMoveTo(direction) {
         if (this.canFinishMoving) throwCustomError(Dice.ERROR.NoMovesLeft, `Dice [${this.id}] cannot move because it's move count has reached 0.`);
-        const nextNeighbor = this.cell?.getNeighbor(direction);
+        let nextNeighbor = this.cell?.getNeighbor(direction);
+        if (this.movementTracking.length > 0) nextNeighbor = this.movementTracking[this.movementTracking.length - 1][0].getNeighbor(direction);
         if (nextNeighbor === undefined) throwCustomError(Dice.ERROR.InvalidDirection, `Dice [${this.id}] cannot move [${direction}] from [${this.cell}] because there is no cell there.`);
         if (typeof nextNeighbor === "number") throwCustomError(Dice.ERROR.InvalidDirection, `Dice [${this.id}] cannot move [${direction}] because ${nextNeighbor} is still a number.`);
         this.temporaryFaces.move(direction);
@@ -322,11 +326,12 @@ class Dice {
     }
     simplified() {
         return {
+            left: this.faces.left,
             top: this.faces.top,
+            right: this.faces.right,
             up: this.faces.up,
             down: this.faces.down,
-            left: this.faces.left,
-            right: this.faces.right
+            owner: this.owner
         };
     }
 }
@@ -408,8 +413,8 @@ class Player {
         this.diceOnBoard = new Map();
     }
     loseDice(dice) {
-        this.diceOnBoard.set(dice.id, dice);
         this.diceOnBoard.delete(dice.id);
+        this.lostDice.set(dice.id, dice);
     }
     placeDice(dice) {
         this.diceOnBoard.set(dice.id, dice);
@@ -436,7 +441,7 @@ class Tridice {
         this.cellMap = new Map();
         this.players = [
             new Player(1, Tridice.PLAYER_DICE_COUNT),
-            new Player(2, Tridice.PLAYER_DICE_COUNT), 
+            new Player(2, Tridice.PLAYER_DICE_COUNT)
         ];
         this.currentPlayerIndex = 0;
         this.upFacingCells = new Map();
@@ -448,8 +453,7 @@ class Tridice {
                 left: id - 1,
                 right: id + 1
             };
-            const unitNumber = +id.toString()[1];
-            const pointingDirection = unitNumber % 2 ? "up" : "down";
+            const pointingDirection = id % 2 ? "up" : "down";
             const newCell = new Cell(id, neighbors, pointingDirection);
             this.cellMap.set(id, newCell);
             if (newCell.pointingDirection === "down") this.downFacingCells.set(id, newCell);
@@ -483,6 +487,9 @@ class Tridice {
     }
     get cells() {
         return this.cellMap;
+    }
+    getCellAt(cellID) {
+        return this.cellMap.get(cellID);
     }
     selectDice(dice) {
         this.selectedDice?.resetTemporaryMoves();
@@ -548,8 +555,8 @@ class Tridice {
         else if (this.didPlayerLose(this.p2)) return this.p1;
         return;
     }
-    endTurn() {
-        this.selectedDice?.fixTemporaryFaces();
+    endTurn(placingDice = false) {
+        if (!placingDice) this.selectedDice?.fixTemporaryFaces();
         this.selectedDice = null;
         this.nextTurn();
     }
