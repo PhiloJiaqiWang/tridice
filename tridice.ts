@@ -44,8 +44,9 @@ export class Tridice {
         left: id - 1,
         right: id + 1,
       } as Neighborhood;
-      const unitNumber = +id.toString()[1];
-      const pointingDirection = unitNumber % 2 ? "up" : "down";
+
+      const pointingDirection = id % 2 ? "up" : "down";
+
       const newCell = new Cell(id, neighbors, pointingDirection);
       this.cellMap.set(id, newCell);
 
