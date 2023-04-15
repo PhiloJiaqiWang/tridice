@@ -88,6 +88,10 @@ export class Tridice {
     return this.cellMap;
   }
 
+  getCellAt(cellID: CellID) {
+    return this.cellMap.get(cellID);
+  }
+
   selectDice(dice: Dice) {
     this.selectedDice?.resetTemporaryMoves();
     this.selectedDice = dice;
@@ -127,7 +131,6 @@ export class Tridice {
       );
 
     const dice = cell.removeDice();
-
     this.nextPlayer.loseDice(dice);
 
     return dice;
