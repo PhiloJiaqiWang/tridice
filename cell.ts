@@ -275,6 +275,10 @@ export class Dice {
     this.state = "";
   }
 
+  get topFace() {
+    return this.faces.top;
+  }
+
   get facesString() {
     return this.faces.toString;
   }
