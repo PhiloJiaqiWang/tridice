@@ -209,8 +209,8 @@ export class Tridice {
     return;
   }
 
-  endTurn() {
-    this.selectedDice?.fixTemporaryFaces();
+  endTurn(placingDice = false) {
+    if (!placingDice) this.selectedDice?.fixTemporaryFaces();
     this.selectedDice = null;
     this.nextTurn();
   }
