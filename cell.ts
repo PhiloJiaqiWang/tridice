@@ -570,8 +570,8 @@ export class Player {
   }
 
   loseDice(dice: Dice) {
-    this.diceOnBoard.set(dice.id, dice);
     this.diceOnBoard.delete(dice.id);
+    this.lostDice.set(dice.id, dice);
   }
 
   placeDice(dice: Dice) {
