@@ -240,11 +240,8 @@ export class Tridice {
     }
   }
 
-  board() {
-    const boardRepresentation: Map<
-      CellID,
-      SimplifiedDice | undefined
-    > = new Map();
+  board(): Map<CellID, SimplifiedDice> {
+    const boardRepresentation: Map<CellID, SimplifiedDice> = new Map();
     for (const [cellID, cell] of this.cellMap.entries())
       if (cell.dice !== null)
         boardRepresentation.set(cellID, cell.dice.simplified());
