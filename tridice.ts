@@ -14,7 +14,7 @@ export class Tridice {
   private cellMap: Map<CellID, Cell>;
   private players!: [Player, Player];
   private currentPlayerIndex: number;
-  private selectedDice!: Dice | null;
+  selectedDice!: Dice | null;
 
   readonly upFacingCells: Map<CellID, Cell>;
   readonly downFacingCells: Map<CellID, Cell>;
