@@ -92,8 +92,8 @@ export class AI {
   neighborsOf(cell: CellID): CellID[] {
     const neighbors = [cell - 1, cell + 1];
 
-    const isTensOdd = !(Math.floor(cell / 10) % 2);
-    if (isTensOdd) neighbors.push(cell - 11);
+    const isPointedDown = !((cell - 10 * Math.floor(cell / 10)) % 2);
+    if (isPointedDown) neighbors.push(cell - 11);
     else neighbors.push(cell + 11);
 
     return neighbors.filter((n) => {
