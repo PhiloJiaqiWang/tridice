@@ -114,21 +114,19 @@ export class AI {
    * @param {number} maxSteps Max steps to be taken
    * @param {number} [stepsTaken=0]
    * @param {Set<{ cell: CellID; steps: number }>} [reachSet=new Set()]
-   * @returns {Set<CellID>}
+   * @returns {Map<CellID, CellID[]>}
    */
   reachFrom(
     cell: CellID,
     maxSteps: number,
     stepsTaken = 0,
     reachSet: Map<CellID, CellID[]> = new Map(),
-    comingFrom: CellID[] | undefined = undefined
-  ) {
-    comingFrom ??= [];
+    comingFrom: CellID[] = []
+  ): Map<CellID, CellID[]> {
     if (stepsTaken > maxSteps) return reachSet;
     const cellSteps = reachSet.get(cell);
-    if (cellSteps === undefined || maxSteps == stepsTaken)
+    if (cellSteps === undefined || maxSteps === stepsTaken)
       reachSet.set(cell, comingFrom);
-    else return reachSet;
 
     const neighbors = this.neighborsOf(cell);
     for (const n of neighbors) {
