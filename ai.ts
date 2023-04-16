@@ -1,4 +1,4 @@
-import { CellID, Dice, NeighborType, throwCustomError } from "./cell.ts";
+import { Cell, CellID, Dice, NeighborType, throwCustomError } from "./cell.ts";
 import { Tridice } from "./tridice.ts";
 
 /**
@@ -80,6 +80,39 @@ export class AI {
     }
 
     return true;
+  }
+
+  tryMoveOutOfRange(game: Tridice) {
+    const diceOnBoard = game.board();
+    const playerDiceOnBoard = game.currentPlayer.diceOnBoard;
+    for (const cellWithDice of diceOnBoard.keys()) {
+      const { dice } = game.getCellAt(cellWithDice)!;
+      if (dice === null)
+        throwCustomError(
+          Cell.ERROR.EmptyCell,
+          `Cell [${cellWithDice}] contains no dice`
+        );
+      if (dice.owner === game.currentPlayer) continue;
+      for (const playerDice of playerDiceOnBoard.values()) {
+        if (this.diceCanReachCell(dice, playerDice.cell!.id)) {
+          this.moveOutOfRange(playerDice, dice, game);
+        }
+      }
+    }
+    return false;
+  }
+
+  moveOutOfRange(dice: Dice, attacker: Dice, game: Tridice) {
+    game.selectDice(dice);
+  }
+
+  diceCanReachCell(
+    dice: Dice,
+    cellID: CellID,
+    maxMoves = dice.topFace
+  ): boolean {
+    const reach = this.reachFrom(dice.cell!.id, maxMoves);
+    return reach.has(cellID) && reach.get(cellID)?.length === maxMoves;
   }
 
   static direction(origin: CellID, destination: CellID): NeighborType {
@@ -183,13 +216,13 @@ function tester() {
   const game = new Tridice();
   const ai = new AI();
 
-  placeDice(game, 34, game.currentPlayer.getDice(0));
+  placeDice(game, 33, game.currentPlayer.getDice(0));
   placeDice(game, 32, game.currentPlayer.getDice(0));
 
-  ai.makeTurn(game);
+  // ai.makeTurn(game);
 
-  console.log(game.board());
-  console.log(game.currentPlayer.lostDice, game.currentPlayer.id);
+  // console.log(game.board());
+  // console.log(game.currentPlayer.lostDice, game.currentPlayer.id);
 }
 
 tester();

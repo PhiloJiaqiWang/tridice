@@ -97,6 +97,10 @@ export class Tridice {
     this.selectedDice = dice;
   }
 
+  deselectDice() {
+    this.selectedDice?.resetTemporaryMoves();
+  }
+
   nextTurn() {
     this.currentPlayerIndex++;
     this.currentPlayerIndex %= 2;
@@ -240,6 +244,12 @@ export class Tridice {
     }
   }
 
+  /**
+   * Gets dice currently placed on board.
+   * @date 4/16/2023 - 10:22:52 AM
+   *
+   * @returns {Map<CellID, SimplifiedDice>}
+   */
   board(): Map<CellID, SimplifiedDice> {
     const boardRepresentation: Map<CellID, SimplifiedDice> = new Map();
     for (const [cellID, cell] of this.cellMap.entries())
