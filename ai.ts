@@ -95,15 +95,29 @@ export class AI {
       if (dice.owner === game.currentPlayer) continue;
       for (const playerDice of playerDiceOnBoard.values()) {
         if (this.diceCanReachCell(dice, playerDice.cell!.id)) {
-          this.moveOutOfRange(playerDice, dice, game);
+          if (this.moveOutOfRange(playerDice, dice, game)) return true;
         }
       }
     }
     return false;
   }
 
-  moveOutOfRange(dice: Dice, attacker: Dice, game: Tridice) {
+  moveOutOfRange(dice: Dice, attacker: Dice, game: Tridice): boolean {
     game.selectDice(dice);
+
+    let canEscape = false;
+
+    const escapeRoutes = this.reachFrom(dice.cell!.id, dice.topFace);
+    escapeRoutes.forEach((path, endCell) => {
+      if (path.length !== dice.topFace) return;
+      const validEscapes: CellID[][] = [];
+      attacker.owner.diceOnBoard.forEach((enemyDice) => {
+        if (this.diceCanReachCell(enemyDice, endCell)) return;
+        validEscapes.push(path);
+      });
+    });
+
+    return canEscape;
   }
 
   diceCanReachCell(
