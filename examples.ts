@@ -14,7 +14,7 @@ import { Tridice } from "./tridice.ts";
  */
 function placeDiceExample(
   game: Tridice,
-  chosenCell: CellID = 11,
+  chosenCell: CellID = 22,
   chosenDice = game.currentPlayer.getDice(0)!
 ) {
   // Set game dice to chosen dice
@@ -24,7 +24,7 @@ function placeDiceExample(
   // Place dice at given cell
   game.placeSelectedDiceAt(chosenCell);
   // End turn
-  game.endTurn();
+  game.endTurn(true);
 }
 
 /**
@@ -56,3 +56,11 @@ function moveDiceExample(
   //Finish moving dice
   game.endTurn();
 }
+
+function test() {
+  const tridice = new Tridice();
+  placeDiceExample(tridice);
+  console.log(tridice.board());
+}
+
+test();

@@ -369,10 +369,9 @@ export class Dice {
     let nextNeighbor = this.cell?.getNeighbor(direction);
 
     if (this.movementTracking.length > 0)
-      nextNeighbor =
-        this.movementTracking[this.movementTracking.length - 1]![0].getNeighbor(
-          direction
-        );
+      nextNeighbor = this.movementTracking[
+        this.movementTracking.length - 1
+      ]![0].getNeighbor(direction);
 
     if (nextNeighbor === undefined)
       throwCustomError(
