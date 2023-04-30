@@ -1,5 +1,7 @@
 # Tridice
 
+Replit: https://replit.com/@PhiloJiaqiWang/triDice
+
 TriDice is a 2-player board game that uses 4-sided dice as movable pieces. Its basic mechanics of dice movement are inspired the game [dicetance](https://pierre-vandermaesen.itch.io/dicetance).
 
 It was built using the P5JS library for the visuals and TypeScript for the backend game logic.
@@ -53,9 +55,33 @@ The notion of moving numbers in and out of the null zone is very useful, as cert
 
 ### Improvements
 
-The minimum information you need to actually keep track of a dice in our game is the value of two of its faces, as the mirror of a valid dice configuration is always invalid.
+The minimum information you need to actually keep track of a dice in our game is the value of two of its faces, as the vertical and horizontal mirrors of a valid dice configuration are always invalid.
 
-## Threatened Cells
+## AI
+
+### Threatened Cells
+
+We can calculate what cells are threated by an attack of each player by calculating all cells that can be reached in $n$ steps by a dice with $n$ moves.
+A few considerations need to be made in calculating the paths. We are not interested in the single shortest path, and we cannot stop searching when we find a path of length $n$. That is because a dice could reach the same cell in more than one way, and the final configuration of the dice could be different for each path.
+
+We use the information on threatened cells and reach of dice in our AI prototype. Our AI has the following behavior:
+
+- It first checks if any of its currently placed dice can capture an enemy piece
+  - If it can capture, it will
+- If there are no available captures, the AI looks at all enemy dice, and checks if any of its own dice is under threat by the opponent
+  - If some of its dice are under threat, it will try to move out of the way by checking if there are any safe cells to move to
+- If it finds that none of the cells it can move the threatened dice to are safe, the AI will attempt to place a dice in a safe spot
+- If there are no save spots available, it will move a dice that is not currently under threat to a position such that the number for is on top (and it could then move 4 steps next turn)
+
+The two last points are still WIP and haven't been fully implemented.
+
+### Board Cells Naming
+
+Any cell on the board can be represented as a coordinate $(a,b)$. $a$ is a number representing what row the cell is located in, and $b$ tells us where in the row a cell is. Both numbers start at 1.
+
+This convention was chosen to facilitate traversal in a non-grid board. $a$ and $b$ can be combined as $c=10a+b$. Moving up is just $c+11$, and moving left or right is just $c\plusmn1$.
+
+This simple conversion also helps with pathfinding, as our algorithm calculates a path while keeping track of the cell coordinates. That path needs to then be converted into a list of intructions of what directions to move, as that is the only way that the Dice class is able to understand where to move.
 
 ## Dice Rolling
 
@@ -63,8 +89,37 @@ Currently, to roll the dice we simulate the 3d dice transformations, moving it a
 
 An even better thing to do is use a lookup table. Because a dice has only $6\times 4$ possible configurations, we could have just kept a list of all possible dice states and just randomly pick one. That would have saved in calculations, as the lookup table would only have had to be calculated once.
 
-## Notes on the AI
+## Heuristics
 
-- Because our game has turns with variable steps, using minimax proved complex, as checking possible future board states is an involved process
+Because our game has turns with variable steps, using minimax proved complex, as checking possible future board states is an involved process. We started out by planning a MinMax algorithm before turning to our AI with simplified behavior. The main issue we encountered was with the ability to undo moves.
 
-### Possible Heuristics for MinMax
+Nevertheless, the calculations we are currently performing for our AI provide a good base for a heuristics function.
+We believe that the main considerentions for a heuristics function would be:
+
+- Keeping track of the dice that haven't been placed on the board
+  - Their value should likely be variable. For example, even if you have a dice in hand, it isn't very useful if there are no safe cells to place it (i.e., it would be captured right after being placed)
+- Dice have different importance depending on what cell they are in
+  - Cells in one of the three corners of the board aren't very powerful, since dice placed there have much of their possible threats blocked by the edge of the board
+  - A cell in the center of the board is very valuable as most or all of its possible moves actually exist in the board.
+- A heuristic function could also make use of our path finding functions to calculate the reach of dice and what cells are under threat or not
+
+In any case, we believe that the reach of a dice is even more important than how many moves it can make, and is a good base for heuristics calculations.
+
+### Game State Example
+
+One situation that could be useful in thinking about a heuristics function is the following.
+
+There are 3 dice on the board, dice $A$ and $B$ belong to player 1, dice $C$ belongs to player 2.
+$A$ can reach $B$, $B$ and $C$ can only reach empty cells.
+$A$'s value might be lower than if $B$ wasn't there, as $B$ is limiting $A$'s movement.
+
+However, if we have the same situation, except $C$ can reach $B$ as well, $A$'s value could be higher than if $B$ wasn't there. In this case, $A$'s position means the players have the option of trading pieces.
+
+## Complexity
+
+The most expensive part of our project is probably our pathfinding function.
+Still, because of the small size of our board and the fact that the highest reach for a dice is 4, it isn't costly in practice.
+As previously mentioned, one downside specific to our situation is that we need to exaust all paths of a certain length, as opposed to finding the shortest path somewhere and stopping there.
+
+The worst case scenario in our specific board configuration is the reach of cell $33$, as it can pass through all cells of the board.
+We need to verify all paths even if they lead to the same place. For instance, $33$ can reach $11$ in two different ways.

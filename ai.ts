@@ -258,18 +258,19 @@ function tester() {
   const game = new Tridice();
   const ai = new AI();
 
-  placeDice(game, 11, game.currentPlayer.getDice(0));
-  placeDice(game, 33, game.currentPlayer.getDice(0));
-  const enemyDice = game.nextPlayer.getDice(0)!;
-  const aiDice = game.currentPlayer.getDice(0)!;
-  while (enemyDice.topFace !== 4 || !game.getCellAt(33)?.diceFits(enemyDice))
-    enemyDice.simulatedRoll(3);
-  while (aiDice.topFace !== 1 || !game.getCellAt(11)?.diceFits(aiDice))
-    aiDice.simulatedRoll(3);
+  console.log(ai.reachFrom(33, 4).size);
+  // placeDice(game, 11, game.currentPlayer.getDice(0));
+  // placeDice(game, 33, game.currentPlayer.getDice(0));
+  // const enemyDice = game.nextPlayer.getDice(0)!;
+  // const aiDice = game.currentPlayer.getDice(0)!;
+  // while (enemyDice.topFace !== 4 || !game.getCellAt(33)?.diceFits(enemyDice))
+  //   enemyDice.simulatedRoll(3);
+  // while (aiDice.topFace !== 1 || !game.getCellAt(11)?.diceFits(aiDice))
+  //   aiDice.simulatedRoll(3);
 
-  ai.makeTurn(game);
+  // ai.makeTurn(game);
 
-  console.log(game.board());
+  // console.log(game.board());
   // console.log(game.currentPlayer.lostDice, game.currentPlayer.id);
 }
 
