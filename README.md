@@ -57,6 +57,64 @@ The notion of moving numbers in and out of the null zone is very useful, as cert
 
 The minimum information you need to actually keep track of a dice in our game is the value of two of its faces, as the vertical and horizontal mirrors of a valid dice configuration are always invalid.
 
+## GUI
+
+We use the p5.js to create the GUI. 
+![GUI picture]()
+There are five classes used here.
+- Board
+  constructor(row, pointX, pointY, length) {
+    this.row = row
+    this.length = length
+    this.pointX = pointX
+    this.pointY = pointY
+    this.cellLis = []
+  }
+- VisualCell
+  constructor(position, up, down, left, right, isUp, pointX, pointY, length) {
+    this.position = position
+    this.up = up
+    this.down = down
+    this.right = right
+    this.left = left
+    this.isUp = isUp
+    this.topOne = 0
+    this.length = length
+    this.pointX = pointX
+    this.pointY = pointY
+    this.color = "#2C1B47"
+    this.player = 0
+  }
+- VisualDice
+  constructor(pointX, pointY, length) {
+    this.length = length
+    this.pointX = pointX
+    this.pointY = pointY
+    this.color = "#2C1B47"
+    this.show = true
+  }
+- VisualPlayer
+  constructor(id,num,positionX, positionY,diceLength,showArrow) {
+    this.id = id
+   this.num = num
+    this.diceLength = diceLength
+    this.positionX = positionX
+    this.positionY = positionY
+    this.diceLis = []
+    this.showArrow = showArrow
+  }
+- VisualGameManager
+  constructor(player1, player2, board) {
+    this.player1 = player1
+    this.player2 = player2
+    this.board = board
+    this.triDice = new Tridice()
+    this.clickedCell = null
+    this.currentPlay = null
+    this.latestStep = null
+  }
+
+Among these classes, the GameManager is the only one which receives feedback from the back end.
 ## AI
 
 ### Threatened Cells
